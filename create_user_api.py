@@ -12,10 +12,11 @@ def allow_cors(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         resp = f(*args, **kwargs)
-        # Разрешите оба домена
-        allowed_origin = request.headers.get('Origin', '')  # Получите текущий origin
+        allowed_origin = request.headers.get('Origin', '')
         if allowed_origin in ['https://www.aistartlab.ru', 'https://aistartlab-practice.ru']:
             resp.headers['Access-Control-Allow-Origin'] = allowed_origin
+        else:
+            resp.headers['Access-Control-Allow-Origin'] = 'https://www.aistartlab.ru '
         resp.headers['Access-Control-Allow-Credentials'] = 'true'
         return resp
     return wrapper
