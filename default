@@ -1,0 +1,88 @@
+map $http_origin $cors_origin {
+    default "";
+    "~^https?://(www\.)?aistartlab\.ru(:[0-9]+)?$" $http_origin;
+    "~^https?://(www\.)?aistartlab-practice\.ru(:[0-9]+)?$" $http_origin;  # ✅ Добавлено
+}
+server {
+    listen 80;
+    server_name aistartlab-practice.ru www.aistartlab-practice.ru;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name aistartlab-practice.ru www.aistartlab-practice.ru;
+
+    ssl_certificate /etc/letsencrypt/live/aistartlab-practice.ru/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aistartlab-practice.ru/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    error_log /var/log/nginx/error.log info;
+
+    location /api/ {
+        # Для preflight-запросов
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Length' 0;
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            return 204;
+        }
+
+        proxy_pass http://127.0.0.1:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        # Заголовки CORS
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+        proxy_pass_request_headers on;
+        proxy_set_header Set-Cookie $http_cookie;
+        proxy_hide_header Set-Cookie;
+        proxy_ignore_headers Set-Cookie;
+    }
+
+    location / {
+    	proxy_pass http://127.0.0.1:8000;
+    	proxy_set_header Host $host;
+    	proxy_set_header X-Real-IP $remote_addr;
+    	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    	proxy_http_version 1.1;
+    	proxy_set_header Upgrade $http_upgrade;
+    	proxy_set_header Connection "upgrade";
+    	proxy_read_timeout 86400s;
+
+    	# ✅ Добавлены заголовки CORS
+    	if ($request_method = OPTIONS) {
+        	add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        	add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        	add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+        	add_header 'Access-Control-Allow-Credentials' 'true' always;
+        	add_header 'Access-Control-Max-Age' 1728000;
+        	add_header 'Content-Length' 0;
+        	add_header 'Content-Type' 'text/plain charset=UTF-8';
+        	return 204;
+    	}
+
+    	add_header 'Access-Control-Allow-Origin' $cors_origin always;
+    	add_header 'Access-Control-Allow-Credentials' 'true' always;
+    	add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+    	add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+
+    	proxy_pass_request_headers on;
+    	proxy_set_header Set-Cookie $http_cookie;
+    	proxy_ignore_headers Set-Cookie;
+}
+}
