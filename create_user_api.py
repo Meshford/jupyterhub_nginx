@@ -50,7 +50,11 @@ def get_jhub_token():
     if request.method == 'OPTIONS':
         return '', 204
 
-    data = request.json
+    try:
+        data = request.get_json(force=True)
+    except Exception as e:
+        print("Ошибка парсинга JSON:", e)
+    return jsonify({'status': 'error', 'message': 'Неверный формат JSON'}), 400
     jhub_username = data.get('username')
     jhub_password = data.get('password')
 
@@ -63,9 +67,13 @@ def get_jhub_token():
     login_page_response = requests.get("https://aistartlab-practice.ru/hub/login", verify=False)
     html = login_page_response.text
 
-    # 2. Извлекаем XSRF-токен из HTML
-    xsrf_match = re.search(r'<input[^>]+name="_xsrf"[^>]*value="([^"]+)"', html)
+    # Выведите HTML в логи для проверки
+    print("HTML-ответ JupyterHub:", html)
+
+    # Убедитесь, что регулярное выражение работает
+    xsrf_match = re.search(r'name="_xsrf"[^>]*value="([^"]+)"', html)
     if not xsrf_match:
+        print("Ошибка: XSRF-токен не найден в HTML")
         return jsonify({'status': 'error', 'message': 'XSRF-токен не найден'}), 500
 
     xsrf_token = xsrf_match.group(1)
