@@ -50,9 +50,9 @@ def get_jhub_token():
     if request.method == 'OPTIONS':
         return '', 204
 
-    # Используйте request.form вместо request.json
-    jhub_username = request.form.get('username')
-    jhub_password = request.form.get('password')
+    data = request.json
+    jhub_username = data.get('username')
+    jhub_password = data.get('password')
 
     if not jhub_username or not jhub_password:
         return jsonify({'status': 'error', 'message': 'Missing username or password'}), 400
