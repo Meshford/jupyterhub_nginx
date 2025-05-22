@@ -1,7 +1,7 @@
 map $http_origin $cors_origin {
     default "";
     "~^https?://(www\.)?aistartlab\.ru(:[0-9]+)?$" $http_origin;
-    "~^https?://(www\.)?aistartlab-practice\.ru(:[0-9]+)?$" $http_origin;  # ✅ Добавлено
+    "~^https?://(www\.)?aistartlab-practice\.ru(:[0-9]+)?$" $http_origin;
 }
 server {
     listen 80;

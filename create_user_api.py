@@ -8,21 +8,9 @@ from flask import make_response
 
 app = Flask(__name__)
 
-def allow_cors(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        resp = f(*args, **kwargs)
-        allowed_origin = request.headers.get('Origin', '')
-        if allowed_origin in ['https://www.aistartlab.ru', 'https://aistartlab-practice.ru']:
-            resp.headers['Access-Control-Allow-Origin'] = allowed_origin
-        else:
-            resp.headers['Access-Control-Allow-Origin'] = 'https://www.aistartlab.ru '
-        resp.headers['Access-Control-Allow-Credentials'] = 'true'
-        return resp
-    return wrapper
+
 
 @app.route('/create_user', methods=['POST', 'OPTIONS'])
-@allow_cors
 def create_user():
     if request.method == 'OPTIONS':
         return '', 204
@@ -58,14 +46,13 @@ def create_user():
     return jsonify({'status': 'ok', 'user_exists': user_exists, 'role': role})
 
 @app.route('/get_jhub_token', methods=['POST', 'OPTIONS'])
-@allow_cors
 def get_jhub_token():
     if request.method == 'OPTIONS':
         return '', 204
 
-    data = request.json
-    jhub_username = data.get('username')
-    jhub_password = data.get('password')
+    # Используйте request.form вместо request.json
+    jhub_username = request.form.get('username')
+    jhub_password = request.form.get('password')
 
     if not jhub_username or not jhub_password:
         return jsonify({'status': 'error', 'message': 'Missing username or password'}), 400
