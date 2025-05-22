@@ -59,17 +59,24 @@ def get_jhub_token():
 
     session = requests.Session()
 
-    # ✅ Убраны пробелы в URL
-    login_page = session.get("https://aistartlab-practice.ru/hub/login", verify=False)
-    xsrf_cookie = session.cookies.get('_xsrf')
+    # 1. Получаем HTML-страницу логина
+    login_page_response = requests.get("https://aistartlab-practice.ru/hub/login", verify=False)
+    html = login_page_response.text
 
+    # 2. Извлекаем XSRF-токен из HTML
+    xsrf_match = re.search(r'<input[^>]+name="_xsrf"[^>]*value="([^"]+)"', html)
+    if not xsrf_match:
+        return jsonify({'status': 'error', 'message': 'XSRF-токен не найден'}), 500
+
+    xsrf_token = xsrf_match.group(1)
+
+    # 3. Отправляем XSRF-токен в теле POST-запроса
     login_data = {
         'username': jhub_username,
         'password': jhub_password,
-        '_xsrf': xsrf_cookie
+        '_xsrf': xsrf_token  # ✅ Передаем XSRF в теле
     }
 
-    # ✅ URL без пробелов
     login_response = session.post(
         "https://aistartlab-practice.ru/hub/login",
         data=login_data,
