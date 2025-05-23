@@ -15,7 +15,13 @@ from jupyterhub.spawner import LocalProcessSpawner
 
 # Запускать JupyterLab по умолчанию
 c.Spawner.default_url = '/lab'
-
+c.Authenticator.allowed_users = {"super_ya_nikitka_23_ya_ru"}
+c.JupyterHub.admin_users = {'super_ya_nikitka_23_ya_ru'}
+c.NotebookApp.allow_remote_access = True
+c.JupyterHub.allow_rest_api_access = True  # Разрешает доступ через REST API
+c.JupyterHub.api_tokens = {
+    '74d33bc50adc415f83873d8ff2545017': 'super_ya_nikitka_23_ya_ru'  # Явно укажите токен и пользователя
+}
 # Разрешать вход всем системным пользователям
 c.Authenticator.allow_all = True
 

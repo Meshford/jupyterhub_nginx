@@ -1,7 +1,7 @@
 map $http_origin $cors_origin {
     default "";
     "~^https?://(www\.)?aistartlab\.ru(:[0-9]+)?$" $http_origin;
-    "~^https?://(www\.)?aistartlab-practice\.ru(:[0-9]+)?$" $http_origin;
+    "~^https?://(www\.)?aistartlab-practice\.ru(:[0-9]+)?$" $http_origin;  # ✅ Добавлено
 }
 server {
     listen 80;
@@ -49,11 +49,20 @@ server {
         add_header 'Access-Control-Allow-Credentials' 'true' always;
 
         proxy_pass_request_headers on;
+        proxy_set_header Authorization $http_authorization;  # Передача заголовка Authorization
+        proxy_set_header XSRF-Token $http_xsrf_token;        # Передача XSRF-Token
         proxy_set_header Set-Cookie $http_cookie;
         proxy_hide_header Set-Cookie;
         proxy_ignore_headers Set-Cookie;
     }
+    location /hub/api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Authorization $http_authorization;
+        proxy_pass_request_headers on;
 
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+    }
     location / {
     	proxy_pass http://127.0.0.1:8000;
     	proxy_set_header Host $host;
@@ -84,5 +93,5 @@ server {
     	proxy_pass_request_headers on;
     	proxy_set_header Set-Cookie $http_cookie;
     	proxy_ignore_headers Set-Cookie;
-}
+    }
 }

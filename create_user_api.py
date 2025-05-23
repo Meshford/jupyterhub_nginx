@@ -5,7 +5,9 @@ import json
 import requests
 from functools import wraps
 from flask import make_response
-
+import urllib3
+from bs4 import BeautifulSoup
+urllib3.disable_warnings()
 app = Flask(__name__)
 
 
@@ -57,31 +59,54 @@ def get_jhub_token():
         return jsonify({'status': 'error', 'message': 'Incorrect format of JSON'}), 400
     jhub_username = data.get('username')
     jhub_password = data.get('password')
-    xsrf_token = data.get('xsrf_token')  # ✅ Берем XSRF из тела запроса
+    #xsrf_token = data.get('xsrf_token')  # ✅ Берем XSRF из тела запроса
 
-    if not xsrf_token:
-        return jsonify({'status': 'error', 'message': 'XSRF-токен не передан'}), 400
+    # if not xsrf_token:
+    #     return jsonify({'status': 'error', 'message': 'XSRF-токен не передан'}), 400
 
     if not jhub_username or not jhub_password:
         return jsonify({'status': 'error', 'message': 'Missing username or password'}), 400
 
     session = requests.Session()
+    
+    login_page_response = session.get("https://aistartlab-practice.ru/hub/login", verify=False)
+    if not login_page_response.ok:
+        return jsonify({'status': 'error', 'message': f'Failed to load login page: {login_page_response.status_code}'}), 500
 
+
+    html = login_page_response.text
+
+
+    html = login_page_response.text
+    if not isinstance(html, str):
+        return jsonify({'status': 'error', 'message': 'Login page response is not a string'}), 500
+    # 
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Ищем input с name="_xsrf"
+    xsrf_input = soup.find('input', {'name': '_xsrf'})
+
+    if not xsrf_input or not xsrf_input.has_attr('value'):
+        return jsonify({'status': 'error', 'message': 'XSRF token not found in login page HTML'}), 500
+
+    xsrf_token = xsrf_input['value']
     # 3. Отправляем XSRF-токен в теле POST-запроса
     login_data = {
         'username': jhub_username,
         'password': jhub_password,
-        '_xsrf': xsrf_token  # ✅ Передаем XSRF в теле
+        '_xsrf': xsrf_token
     }
 
     login_response = session.post(
         "https://aistartlab-practice.ru/hub/login",
         data=login_data,
-        verify=False
+        cookies=session.cookies,
+        verify=False,
+        # allow_redirects=False
     )
-
+    
     if not login_response.ok:
-        return jsonify({'status': 'error', 'message': 'Login failed in JupyterHub'}), 400
+        return jsonify({'status': 'error', 'message': f'{login_response.text} Login failed in JupyterHub'}), 400
 
     token_data = {
         'note': 'token_for_course',
