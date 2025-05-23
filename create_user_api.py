@@ -53,30 +53,19 @@ def get_jhub_token():
     try:
         data = request.get_json(force=True)
     except Exception as e:
-        print("Ошибка парсинга JSON:", e)
-    return jsonify({'status': 'error', 'message': 'Неверный формат JSON'}), 400
+        print("Error to parsing JSON:", e)
+        return jsonify({'status': 'error', 'message': 'Incorrect format of JSON'}), 400
     jhub_username = data.get('username')
     jhub_password = data.get('password')
+    xsrf_token = data.get('xsrf_token')  # ✅ Берем XSRF из тела запроса
+
+    if not xsrf_token:
+        return jsonify({'status': 'error', 'message': 'XSRF-токен не передан'}), 400
 
     if not jhub_username or not jhub_password:
         return jsonify({'status': 'error', 'message': 'Missing username or password'}), 400
 
     session = requests.Session()
-
-    # 1. Получаем HTML-страницу логина
-    login_page_response = requests.get("https://aistartlab-practice.ru/hub/login", verify=False)
-    html = login_page_response.text
-
-    # Выведите HTML в логи для проверки
-    print("HTML-ответ JupyterHub:", html)
-
-    # Убедитесь, что регулярное выражение работает
-    xsrf_match = re.search(r'name="_xsrf"[^>]*value="([^"]+)"', html)
-    if not xsrf_match:
-        print("Ошибка: XSRF-токен не найден в HTML")
-        return jsonify({'status': 'error', 'message': 'XSRF-токен не найден'}), 500
-
-    xsrf_token = xsrf_match.group(1)
 
     # 3. Отправляем XSRF-токен в теле POST-запроса
     login_data = {
@@ -88,7 +77,6 @@ def get_jhub_token():
     login_response = session.post(
         "https://aistartlab-practice.ru/hub/login",
         data=login_data,
-        cookies=session.cookies,
         verify=False
     )
 
@@ -99,11 +87,14 @@ def get_jhub_token():
         'note': 'token_for_course',
         'expires_in': 86400 * 365
     }
-
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'token 74d33bc50adc415f83873d8ff2545017'
+    }
     token_response = session.post(
-        "https://aistartlab-practice.ru/hub/api/authorizations/token",
-        data=token_data,
-        cookies=session.cookies,
+        f"https://aistartlab-practice.ru/hub/api/users/{jhub_username}/tokens",
+        json=token_data,
+        headers=headers,
         verify=False
     )
 
