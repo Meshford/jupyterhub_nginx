@@ -11,7 +11,6 @@ urllib3.disable_warnings()
 app = Flask(__name__)
 
 
-
 @app.route('/create_user', methods=['POST', 'OPTIONS'])
 def create_user():
     if request.method == 'OPTIONS':

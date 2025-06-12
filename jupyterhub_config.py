@@ -18,7 +18,10 @@ c.Spawner.default_url = '/lab'
 c.Authenticator.allowed_users = {"super_ya_nikitka_23_ya_ru"}
 c.JupyterHub.admin_users = {'super_ya_nikitka_23_ya_ru'}
 c.NotebookApp.allow_remote_access = True
+c.Authenticator.auto_login = True
+c.JupyterHub.trust_xheaders = True
 c.JupyterHub.allow_rest_api_access = True  # Разрешает доступ через REST API
+c.JupyterHub.allow_token_login = True
 c.JupyterHub.api_tokens = {
     '74d33bc50adc415f83873d8ff2545017': 'super_ya_nikitka_23_ya_ru'  # Явно укажите токен и пользователя
 }
@@ -68,7 +71,7 @@ def copy_course_materials(spawner):
     src = os.path.join(template_base, role)
     dst = home_dir
 
-    target_file = os.path.join(dst, 'first-lesson.ipynb')
+    target_file = os.path.join(dst, 'lesson0.ipynb')
     if not os.path.exists(target_file):
         try:
             shutil.copytree(src, dst, dirs_exist_ok=True)
@@ -88,7 +91,7 @@ class CustomSpawner(LocalProcessSpawner):
         role = user_roles.get(username)
 
         if role in {'basic', 'simple', 'intermediate', 'full'}:
-            self.default_url = '/lab/tree/first-lesson.ipynb'
+            self.default_url = '/lab/tree/lesson0.ipynb'
         else:
             self.default_url = '/lab'
 
